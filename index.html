@@ -38,7 +38,8 @@ ul::before {
   height: 1px;
   background: #ccc;
 }
-    .node.admin .actions { display: inline; }
+    actions { display: none; }
+.admin-mode .actions { display: inline; }
     .highlight { background: beige; }
     .toggle { cursor: pointer; color: #888; margin-right: 5px; }
     .hidden { display: none; }
@@ -145,22 +146,24 @@ ul::before {
     }
 
     function checkPassword() {
-      const input = document.getElementById("adminPassword").value.trim();
-      if (input === "Kaada2428") {
-        admin = true;
-        document.getElementById("logoutBtn").style.display = "inline";
-        document.getElementById("adminPassword").value = "";
-        renderTree();
-      } else {
-        alert("Құпия сөз қате!");
-      }
-    }
+  const input = document.getElementById("adminPassword").value.trim();
+  if (input === "Kaada2428") {
+    admin = true;
+    document.body.classList.add("admin-mode");
+    document.getElementById("logoutBtn").style.display = "inline";
+    document.getElementById("adminPassword").value = "";
+    renderTree();
+  } else {
+    alert("Құпия сөз қате!");
+  }
+}
 
-    function exitAdmin() {
-      admin = false;
-      document.getElementById("logoutBtn").style.display = "none";
-      renderTree();
-    }
+function exitAdmin() {
+  admin = false;
+  document.body.classList.remove("admin-mode");
+  document.getElementById("logoutBtn").style.display = "none";
+  renderTree();
+}
 
     function findPerson(obj, name) {
       if (obj.name === name) return obj;
