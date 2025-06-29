@@ -37,7 +37,7 @@
     const MASTER_KEY = "$2a$10$UnP5uExbEyacFf503YChRejaBo8Jwg93.9kDLbat4.fxNad6g2wc2";
     const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
     let treeData = {};
-    let admin = false;
+    let admin = localStorage.getItem("adminMode") === "true";
 
     async function fetchTree() {
       const res = await fetch(API_URL, {
@@ -45,6 +45,7 @@
       });
       const json = await res.json();
       treeData = json.record;
+      document.getElementById("logoutBtn").style.display = admin ? "inline" : "none";
       renderTree();
     }
 
@@ -93,7 +94,6 @@
           ul.appendChild(createNode(child, level + 1));
         });
 
-        // Показывать только Наймана и его детей, всё остальное скрыто
         if (level < 2) {
           li.appendChild(ul);
         } else {
@@ -108,7 +108,10 @@
     function toggleBranch(el) {
       const li = el.closest("li");
       const ul = li.querySelector("ul");
-      if (ul) ul.classList.toggle("hidden");
+      if (ul) {
+        ul.classList.toggle("hidden");
+        el.textContent = ul.classList.contains("hidden") ? "[+]" : "[-]";
+      }
     }
 
     function highlight(el) {
@@ -120,6 +123,7 @@
       const input = document.getElementById("adminPassword").value.trim();
       if (input === "Kaada2428") {
         admin = true;
+        localStorage.setItem("adminMode", "true");
         document.getElementById("logoutBtn").style.display = "inline";
         document.getElementById("adminPassword").value = "";
         renderTree();
@@ -130,6 +134,7 @@
 
     function exitAdmin() {
       admin = false;
+      localStorage.removeItem("adminMode");
       document.getElementById("logoutBtn").style.display = "none";
       renderTree();
     }
