@@ -1,2 +1,262 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <title>Найман шежіресі</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: white;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .search-box {
+      text-align: center;
+      margin: 15px;
+    }
+    .label {
+      display: inline-block;
+      padding: 5px 10px;
+      margin: 5px 0;
+      cursor: pointer;
+      border-left: 2px solid #ccc;
+      background: #fff;
+    }
+    .label.clicked {
+      background: #f5f5dc;
+    }
+    .node {
+      margin-left: 20px;
+    }
+    .children {
+      margin-left: 20px;
+      border-left: 2px dashed #ccc;
+      padding-left: 10px;
+    }
+    .hidden {
+      display: none;
+    }
+    .actions {
+      display: inline-block;
+      margin-left: 10px;
+    }
+    .actions button {
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+    #adminPanel {
+      text-align: center;
+      margin: 10px;
+    }
+    #logoutBtn {
+      display: none;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Найман шежіресі</h1>
 
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Шежіреден іздеу">
+    <button onclick="searchTree()">Іздеу</button>
+    <div id="searchResult" style="color:red; margin-top: 10px;"></div>
+  </div>
+
+  <div id="adminPanel">
+    <button id="loginBtn" onclick="login()">Шежірені өзгерту</button>
+    <button id="logoutBtn" onclick="logout()">Шығу</button>
+  </div>
+
+  <div id="tree-container"></div>
+
+  <script>
+    const password = "Kaada2428";
+    let adminMode = false;
+    let selectedPath = [];
+
+    let treeData = JSON.parse(localStorage.getItem('treeData')) || {
+      name: "Найман",
+      children: [
+        { name: "Бірінші бала" },
+        { name: "Екінші бала" },
+        { name: "Үшінші бала" },
+        { name: "Төртінші бала" },
+        { name: "Бесінші бала" },
+        { name: "Алтыншы бала" },
+        { name: "Жетінші бала" },
+        { name: "Сегізінші бала" },
+        { name: "Тоғызыншы бала" },
+        { name: "Оныншы бала" }
+      ]
+    };
+
+    function saveData() {
+      localStorage.setItem('treeData', JSON.stringify(treeData));
+    }
+
+    function renderTree(container, node, path = []) {
+      container.innerHTML = '';
+      const build = (parent, node, path) => {
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = 'node';
+
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = node.name || "";
+        if (JSON.stringify(path) === JSON.stringify(selectedPath)) {
+          label.classList.add('clicked');
+        }
+
+        label.onclick = () => {
+          document.querySelectorAll('.label').forEach(el => el.classList.remove('clicked'));
+          label.classList.add('clicked');
+          selectedPath = path;
+          const childrenDiv = nodeDiv.querySelector('.children');
+          if (childrenDiv) childrenDiv.classList.toggle('hidden');
+        };
+
+        nodeDiv.appendChild(label);
+
+        if (adminMode) {
+          const actions = document.createElement('div');
+          actions.className = 'actions';
+
+          const addBtn = document.createElement('button');
+          addBtn.textContent = '➕';
+          addBtn.title = 'Ұрпақ қосу';
+          addBtn.onclick = (e) => {
+            e.stopPropagation();
+            selectedPath = path;
+            addChild();
+          };
+
+          const editBtn = document.createElement('button');
+          editBtn.textContent = '✏️';
+          editBtn.title = 'Өңдеу';
+          editBtn.onclick = (e) => {
+            e.stopPropagation();
+            selectedPath = path;
+            editNode();
+          };
+
+          const delBtn = document.createElement('button');
+          delBtn.textContent = '🗑️';
+          delBtn.title = 'Өшіру';
+          delBtn.onclick = (e) => {
+            e.stopPropagation();
+            selectedPath = path;
+            deleteNode();
+          };
+
+          actions.appendChild(addBtn);
+          actions.appendChild(editBtn);
+          if (path.length > 0) actions.appendChild(delBtn);
+          nodeDiv.appendChild(actions);
+        }
+
+        if (node.children && node.children.length > 0) {
+          const childrenDiv = document.createElement('div');
+          childrenDiv.className = 'children';
+          node.children.forEach((child, i) => {
+            build(childrenDiv, child, path.concat(i));
+          });
+          nodeDiv.appendChild(childrenDiv);
+        }
+
+        parent.appendChild(nodeDiv);
+      };
+
+      build(container, node, []);
+    }
+
+    function login() {
+      const input = prompt("Құпия сөзді енгізіңіз:");
+      if (input === password) {
+        adminMode = true;
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'inline-block';
+        renderTree(document.getElementById('tree-container'), treeData);
+      } else {
+        alert("Қате құпия сөз!");
+      }
+    }
+
+    function logout() {
+      adminMode = false;
+      selectedPath = [];
+      document.getElementById('loginBtn').style.display = 'inline-block';
+      document.getElementById('logoutBtn').style.display = 'none';
+      renderTree(document.getElementById('tree-container'), treeData);
+    }
+
+    function getNode(path) {
+      return path.reduce((obj, i) => obj.children[i], treeData);
+    }
+
+    function addChild() {
+      const name = prompt("Есімі:");
+      if (!name) return;
+      const node = getNode(selectedPath);
+      if (!node.children) node.children = [];
+      node.children.push({ name });
+      saveData();
+      renderTree(document.getElementById('tree-container'), treeData);
+    }
+
+    function editNode() {
+      const node = getNode(selectedPath);
+      const name = prompt("Жаңа есімі:", node.name);
+      if (!name) return;
+      node.name = name;
+      saveData();
+      renderTree(document.getElementById('tree-container'), treeData);
+    }
+
+    function deleteNode() {
+      if (selectedPath.length === 0) return alert("Тамырды өшіруге болмайды.");
+      const parent = getNode(selectedPath.slice(0, -1));
+      parent.children.splice(selectedPath[selectedPath.length - 1], 1);
+      selectedPath = [];
+      saveData();
+      renderTree(document.getElementById('tree-container'), treeData);
+    }
+
+    function searchTree() {
+      const term = document.getElementById("searchInput").value.trim().toLowerCase();
+      if (!term) return;
+
+      let found = false;
+
+      function search(node, path = []) {
+        if ((node.name || "").toLowerCase().includes(term)) {
+          selectedPath = path;
+          found = true;
+        }
+        if (node.children) {
+          node.children.forEach((child, i) => {
+            search(child, path.concat(i));
+          });
+        }
+      }
+
+      search(treeData);
+
+      document.getElementById("searchResult").textContent = found
+        ? ""
+        : "Шежіреден табылмады";
+
+      renderTree(document.getElementById('tree-container'), treeData);
+    }
+
+    renderTree(document.getElementById('tree-container'), treeData);
+  </script>
+</body>
+</html>
 
