@@ -6,9 +6,38 @@
   <title>Найман шежіресі</title>
   <style>
     body { font-family: sans-serif; background: #fff; margin: 1em; }
-    ul { list-style: none; padding-left: 1em; border-left: 1px solid #ccc; }
-    .node { margin: .3em 0; position: relative; padding-left: .5em; }
-    .node .actions { display: none; margin-left: 0.5em; }
+    ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 2em;
+  position: relative;
+}
+
+ul::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0.6em;
+  width: 0;
+  height: 100%;
+  border-left: 1px solid #ccc;
+}
+
+.node {
+  position: relative;
+  padding-left: 1em;
+  margin: .5em 0;
+}
+
+.node::before {
+  content: "";
+  position: absolute;
+  top: 1.2em;
+  left: 0;
+  width: 1em;
+  height: 1px;
+  background: #ccc;
+}
     .node.admin .actions { display: inline; }
     .highlight { background: beige; }
     .toggle { cursor: pointer; color: #888; margin-right: 5px; }
