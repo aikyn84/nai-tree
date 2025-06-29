@@ -36,7 +36,7 @@
   <script>
     const BIN_ID = "686178068a456b7966b8207b";
     const MASTER_KEY = "$2a$10$UnP5uExbEyacFf503YChRejaBo8Jwg93.9kDLbat4.fxNad6g2wc2";
-    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    const API_URL = https://api.jsonbin.io/v3/b/${BIN_ID};
     let treeData = {};
     let admin = false;
 
@@ -64,17 +64,20 @@
       const container = document.getElementById("treeContainer");
       container.innerHTML = "";
       const ul = document.createElement("ul");
-      ul.appendChild(createNode(treeData, 0));
+      ul.appendChild(createNode(treeData, 0)); // уровень передаём
       container.appendChild(ul);
     }
 
-    function createNode(person) {
+    function createNode(person, level = 0) {
       const li = document.createElement("li");
       li.className = "node";
       if (admin) li.classList.add("admin");
 
+      // скрываем все уровни глубже 1
+      if (level >= 2) li.classList.add("hidden");
+
       const span = document.createElement("span");
-      span.innerHTML = `<span class="toggle" onclick="toggleBranch(this)">+</span><span class="name" onclick="highlight(this)">${person.name}</span>`;
+      span.innerHTML = <span class="toggle" onclick="toggleBranch(this)">+</span><span class="name" onclick="highlight(this)">${person.name}</span>;
 
       const actions = document.createElement("span");
       actions.className = "actions";
@@ -89,7 +92,7 @@
       if (person.children && person.children.length > 0) {
         const ul = document.createElement("ul");
         person.children.forEach(child => {
-          ul.appendChild(createNode(child));
+          ul.appendChild(createNode(child, level + 1)); // передаём уровень
         });
         li.appendChild(ul);
       }
