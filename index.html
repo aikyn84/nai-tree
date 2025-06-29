@@ -9,15 +9,22 @@
       font-family: sans-serif;
       background: white;
       margin: 20px;
-      padding: 0;
     }
     h1 {
       text-align: center;
     }
-    #adminPanel, .controls {
+    #adminPanel {
       display: none;
-      margin-bottom: 15px;
       text-align: center;
+      margin-bottom: 10px;
+    }
+    .controls button {
+      margin: 5px;
+      padding: 6px 10px;
+    }
+    .search-box {
+      text-align: center;
+      margin: 15px;
     }
     #tree-container {
       padding: 10px;
@@ -26,45 +33,31 @@
       margin-left: 20px;
       position: relative;
     }
-    .node > .label {
+    .label {
       display: inline-block;
-      background: #fff;
-      border-left: 2px solid #ccc;
       padding: 5px 10px;
       margin: 5px 0;
       cursor: pointer;
+      border-left: 2px solid #ccc;
+      background: #fff;
     }
-    .node > .label.clicked {
+    .label.clicked {
       background: #f5f5dc;
+    }
+    .bold {
+      font-weight: bold;
     }
     .children {
       margin-left: 20px;
       border-left: 2px dashed #ccc;
       padding-left: 10px;
-      display: block;
     }
     .hidden {
       display: none;
     }
-    .bold {
-      font-weight: bold;
-    }
-    .search-box {
-      text-align: center;
-      margin: 20px;
-    }
     .note {
-      color: gray;
       font-style: italic;
-      margin-left: 5px;
-    }
-    button {
-      margin: 5px;
-      padding: 5px 10px;
-    }
-    input {
-      margin: 3px;
-      padding: 5px;
+      color: #888;
     }
   </style>
 </head>
@@ -74,18 +67,18 @@
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="Шежіреден іздеу">
     <button onclick="searchTree()">Іздеу</button>
-    <div id="searchResult" style="color: red; margin-top: 10px;"></div>
+    <div id="searchResult" style="color:red; margin-top: 10px;"></div>
   </div>
 
   <div style="text-align:center;">
-    <button onclick="login()">Кіру</button>
+    <button onclick="login()">Шежірені өзгерту</button>
   </div>
 
   <div id="adminPanel">
     <div class="controls">
-      <button onclick="addChild()">➕ Ұрпақ қосу</button>
-      <button onclick="deleteNode()">🗑️ Өшіру</button>
-      <button onclick="editNode()">✏️ Өңдеу</button>
+      <button onclick="addChild()">Ұрпақ қосу</button>
+      <button onclick="editNode()">Өңдеу</button>
+      <button onclick="deleteNode()">Өшіру</button>
     </div>
   </div>
 
@@ -94,7 +87,8 @@
   <script>
     const password = "Kaada2428";
     let treeData = JSON.parse(localStorage.getItem('treeData')) || {
-      name: "Найман", nickname: "", date: "", note: "", bold: false, children: [
+      name: "Найман",
+      children: [
         { name: "Бірінші бала" },
         { name: "Екінші бала" },
         { name: "Үшінші бала" },
@@ -107,147 +101,129 @@
         { name: "Оныншы бала" }
       ]
     };
-
-    let selectedNodePath = [];
+    let selectedPath = [];
 
     function saveData() {
       localStorage.setItem('treeData', JSON.stringify(treeData));
     }
 
     function renderTree(container, node, path = []) {
-      container.innerHTML = "";
+      container.innerHTML = '';
       const build = (parent, node, path) => {
-        const div = document.createElement('div');
-        div.className = 'node';
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = 'node';
 
         const label = document.createElement('div');
         label.className = 'label';
         if (node.bold) label.classList.add('bold');
+        if (JSON.stringify(path) === JSON.stringify(selectedPath)) {
+          label.classList.add('clicked');
+        }
+
+        label.textContent = node.name || '';
+        if (node.nickname) label.textContent += ` (${node.nickname})`;
+        if (node.date) label.textContent += ` ${node.date}`;
+        if (node.note) label.textContent += ` *`;
 
         label.onclick = () => {
           document.querySelectorAll('.label').forEach(el => el.classList.remove('clicked'));
           label.classList.add('clicked');
-          selectedNodePath = path;
+          selectedPath = path;
         };
 
-        let content = node.name || '';
-        if (node.nickname) content += ` (${node.nickname})`;
-        if (node.date) content += ` ${node.date}`;
-        if (node.note) content += ` <span class="note">*</span>`;
-        label.innerHTML = content;
-        div.appendChild(label);
+        nodeDiv.appendChild(label);
 
         if (node.children && node.children.length > 0) {
-          label.style.cursor = "pointer";
-          label.onclick = () => {
-            const ch = div.querySelector('.children');
-            if (ch) ch.classList.toggle('hidden');
-            document.querySelectorAll('.label').forEach(el => el.classList.remove('clicked'));
-            label.classList.add('clicked');
-            selectedNodePath = path;
-          };
-
-          const childrenDiv = document.createElement('div');
-          childrenDiv.className = 'children';
-          node.children.forEach((child, index) => {
-            build(childrenDiv, child, path.concat(index));
+          const childContainer = document.createElement('div');
+          childContainer.className = 'children';
+          node.children.forEach((child, i) => {
+            build(childContainer, child, path.concat(i));
           });
-          div.appendChild(childrenDiv);
+          nodeDiv.appendChild(childContainer);
         }
 
-        parent.appendChild(div);
+        parent.appendChild(nodeDiv);
       };
+
       build(container, node, []);
     }
 
-    function getNodeByPath(path) {
-      return path.reduce((obj, i) => obj.children[i], treeData);
-    }
-
     function login() {
-      const pass = prompt("Құпия сөзді енгізіңіз:");
-      if (pass === password) {
-        document.getElementById('adminPanel').style.display = 'block';
+      const input = prompt("Құпия сөзді енгізіңіз:");
+      if (input === password) {
+        document.getElementById("adminPanel").style.display = "block";
       } else {
         alert("Қате құпия сөз!");
       }
     }
 
+    function getNode(path) {
+      return path.reduce((obj, i) => obj.children[i], treeData);
+    }
+
     function addChild() {
-      if (!selectedNodePath.length && selectedNodePath.length !== 0) return alert("Басты тұлғаны таңдаңыз.");
+      if (!selectedPath) return alert("Адамды таңдаңыз.");
       const name = prompt("Есімі:");
       if (!name) return;
       const nickname = prompt("Лақап аты:");
       const date = prompt("Туған жылы:");
-      const note = prompt("Түсініктеме (қысқаша):");
-      const bold = confirm("Қара түспен бөлектеу керек пе?");
-      const node = getNodeByPath(selectedNodePath);
+      const note = prompt("Түсініктеме:");
+      const bold = confirm("Қара түспен белгілеу керек пе?");
+      const node = getNode(selectedPath);
       if (!node.children) node.children = [];
       node.children.push({ name, nickname, date, note, bold });
       saveData();
       renderTree(document.getElementById('tree-container'), treeData);
     }
 
-    function deleteNode() {
-      if (selectedNodePath.length === 0) return alert("Тамырды өшіруге болмайды.");
-      const parent = getNodeByPath(selectedNodePath.slice(0, -1));
-      parent.children.splice(selectedNodePath[selectedNodePath.length - 1], 1);
-      saveData();
-      renderTree(document.getElementById('tree-container'), treeData);
-    }
-
     function editNode() {
-      const node = getNodeByPath(selectedNodePath);
+      const node = getNode(selectedPath);
       const name = prompt("Есімі:", node.name);
       const nickname = prompt("Лақап аты:", node.nickname || "");
       const date = prompt("Туған жылы:", node.date || "");
       const note = prompt("Түсініктеме:", node.note || "");
-      const bold = confirm("Қара түспен бөлектеу керек пе?");
+      const bold = confirm("Қара түспен белгілеу керек пе?");
       Object.assign(node, { name, nickname, date, note, bold });
       saveData();
       renderTree(document.getElementById('tree-container'), treeData);
     }
 
+    function deleteNode() {
+      if (selectedPath.length === 0) return alert("Тамырды өшіруге болмайды.");
+      const parent = getNode(selectedPath.slice(0, -1));
+      parent.children.splice(selectedPath[selectedPath.length - 1], 1);
+      selectedPath = [];
+      saveData();
+      renderTree(document.getElementById('tree-container'), treeData);
+    }
+
     function searchTree() {
-      const term = document.getElementById("searchInput").value.trim().toLowerCase();
+      const term = document.getElementById("searchInput").value.toLowerCase();
       if (!term) return;
+
       let found = false;
-      function search(node, path = []) {
+
+      function traverse(node, path = []) {
         if ((node.name || "").toLowerCase().includes(term)) {
-          selectedNodePath = path;
-          expandPath(path);
-          highlightSelected();
+          selectedPath = path;
           found = true;
         }
         if (node.children) {
-          node.children.forEach((child, i) => search(child, path.concat(i)));
+          node.children.forEach((child, i) => {
+            traverse(child, path.concat(i));
+          });
         }
       }
-      search(treeData);
-      document.getElementById("searchResult").textContent = found ? "" : "Шежіреден табылмады";
+
+      traverse(treeData);
+      if (found) {
+        document.getElementById("searchResult").textContent = "";
+      } else {
+        document.getElementById("searchResult").textContent = "Шежіреден табылмады";
+      }
+      renderTree(document.getElementById('tree-container'), treeData);
     }
 
-    function expandPath(path) {
-      let el = document.getElementById('tree-container');
-      renderTree(el, treeData);
-      let node = el;
-      path.forEach(index => {
-        const children = node.querySelectorAll('.children');
-        if (children[index]) children[index].classList.remove('hidden');
-        node = children[index];
-      });
-    }
-
-    function highlightSelected() {
-      setTimeout(() => {
-        const all = document.querySelectorAll('.label');
-        all.forEach(label => label.classList.remove('clicked'));
-        const last = all[all.length - 1];
-        if (last) last.classList.add('clicked');
-      }, 100);
-    }
-
-    // Initial render
     renderTree(document.getElementById('tree-container'), treeData);
   </script>
 </body>
