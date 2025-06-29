@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <title>Найман Шежіресі</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background: white;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    .tree-line {
+      border-left: 2px dashed #ccc;
+      padding-left: 10px;
+      margin-left: 5px;
+    }
+    .person {
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .person:hover,
+    .person.highlight {
+      background-color: #f5f5dc;
+    }
+    .child-container {
+      margin-left: 20px;
+    }
+    .admin-only {
+      display: none;
+    }
+    .admin .admin-only {
+      display: inline-block;
+    }
+    .bold-name {
+      font-weight: bold;
+    }
+    .note {
+      margin-top: 30px;
+      padding: 10px;
+      border: 1px dotted #999;
+    }
+    .note::before {
+      content: "* ";
+      font-weight: bold;
+    }
+    .search-result {
+      margin-top: 10px;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Найман Шежіресі</h2>
+
+  <div class="admin-panel">
+    <label>Шежірені өзгерту:</label>
+    <input type="password" id="adminPassword" />
+    <button onclick="checkPassword()">Кіру</button>
+  </div>
+
+  <input type="text" id="searchInput" placeholder="Шежіреден іздеу" oninput="searchTree()" />
+  <div id="searchResult" class="search-result"></div>
+
+  <div id="treeContainer"></div>
+
+  <div class="note" id="noteArea">Ескерту: Бұл бөлімге қосымша ақпарат жазуға болады.</div>
+
+  <button id="saveBtn" style="display:none;" onclick="saveData()">Сақтау</button>
+
+  <!-- Подключаем внешний JS -->
+  <script src="script.js"></script>
+</body>
+</html>
