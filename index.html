@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Найман шежіресі</title>
+  <style>
+    body { font-family: sans-serif; background: #fff; margin: 1em; }
+    ul { list-style: none; padding-left: 1em; border-left: 1px solid #ccc; }
+    .node { margin: .3em 0; position: relative; padding-left: .5em; }
+    .node .actions { display: none; margin-left: 0.5em; }
+    .node.admin .actions { display: inline; }
+    .highlight { background: beige; }
+    .toggle { cursor: pointer; color: #888; margin-right: 5px; }
+    .hidden > ul { display: none; }
+    .admin-bar { margin: 1em 0; }
+    .search-path { font-size: 0.9em; color: #888; }
+    button.icon-btn { background: none; border: none; cursor: pointer; font-size: 1em; }
+    .admin-exit { margin-left: 1em; color: red; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h2>Найман шежіресі</h2>
+
+  <div class="admin-bar">
+    <input type="password" id="adminPassword" placeholder="Құпия сөз енгізіңіз" />
+    <button onclick="checkPassword()">Кіру</button>
+    <span id="logoutBtn" class="admin-exit" style="display:none" onclick="exitAdmin()">Шығу</span>
+  </div>
+
+  <input type="text" id="searchInput" placeholder="Шежіреден іздеу" oninput="searchTree()" />
+
+  <div id="treeContainer"></div>
+
+  <script>
+    const BIN_ID = "686178068a456b7966b8207b";
+    const MASTER_KEY = "$2a$10$UnP5uExbEyacFf503YChRejaBo8Jwg93.9kDLbat4.fxNad6g2wc2";
+    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    let treeData = {};
+    let admin = false;
+
+    async function fetchTree() {
+      const res = await fetch(API_URL, {
+        headers: { "X-Master-Key": MASTER_KEY }
+      });
+      const json = await res.json();
+      treeData = json.record;
+      renderTree();
+    }
+
+    async function saveTree() {
+      await fetch(API_URL, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": MASTER_KEY
+        },
+        body: JSON.stringify(treeData)
+      });
+    }
+
+    function renderTree() {
+      const container = document.getElementById("treeContainer");
+      container.innerHTML = "";
+      const ul = document.createElement("ul");
+      ul.appendChild(createNode(treeData));
+      container.appendChild(ul);
+    }
+
+    function createNode(person) {
+      const li = document.createElement("li");
+      li.className = "node";
+      if (admin) li.classList.add("admin");
+
+      const span = document.createElement("span");
+      span.innerHTML = `<span class="toggle" onclick="toggleBranch(this)">+</span><span class="name" onclick="highlight(this)">${person.name}</span>`;
+
+      const actions = document.createElement("span");
+      actions.className = "actions";
+      actions.innerHTML = `
+        <button class="icon-btn" onclick="addChild('${person.name}')">➕</button>
+        <button class="icon-btn" onclick="editNode('${person.name}')">✏️</button>
+        <button class="icon-btn" onclick="deleteNode('${person.name}')">🗑️</button>
+      `;
+      span.appendChild(actions);
+      li.appendChild(span);
+
+      if (person.children && person.children.length > 0) {
+        const ul = document.createElement("ul");
+        person.children.forEach(child => {
+          ul.appendChild(createNode(child));
+        });
+        li.appendChild(ul);
+      }
+
+      return li;
+    }
+
+    function toggleBranch(el) {
+      const li = el.closest("li");
+      li.classList.toggle("hidden");
+    }
+
+    function highlight(el) {
+      document.querySelectorAll(".highlight").forEach(e => e.classList.remove("highlight"));
+      el.classList.add("highlight");
+    }
+
+    function checkPassword() {
+      const input = document.getElementById("adminPassword").value;
+      if (input === "Kaada2428") {
+        admin = true;
+        document.getElementById("logoutBtn").style.display = "inline";
+        renderTree();
+      }
+    }
+
+    function exitAdmin() {
+      admin = false;
+      document.getElementById("logoutBtn").style.display = "none";
+      renderTree();
+    }
+
+    function findPerson(obj, name) {
+      if (obj.name === name) return obj;
+      if (obj.children) {
+        for (let child of obj.children) {
+          const res = findPerson(child, name);
+          if (res) return res;
+        }
+      }
+      return null;
+    }
+
+    function addChild(parentName) {
+      const name = prompt("Жаңа есім:");
+      if (!name) return;
+      const parent = findPerson(treeData, parentName);
+      if (!parent.children) parent.children = [];
+      parent.children.push({ name });
+      renderTree();
+      saveTree();
+    }
+
+    function editNode(name) {
+      const person = findPerson(treeData, name);
+      const newName = prompt("Жаңартылған есім:", person.name);
+      if (newName) {
+        person.name = newName;
+        renderTree();
+        saveTree();
+      }
+    }
+
+    function deleteNode(name) {
+      function recursiveDelete(obj, name) {
+        if (!obj.children) return false;
+        obj.children = obj.children.filter(child => {
+          if (child.name === name) return false;
+          return !recursiveDelete(child, name);
+        });
+        return false;
+      }
+      recursiveDelete(treeData, name);
+      renderTree();
+      saveTree();
+    }
+
+    function searchTree() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      document.querySelectorAll(".highlight").forEach(e => e.classList.remove("highlight"));
+      if (!query) return;
+      function search(obj, path = []) {
+        if (obj.name.toLowerCase().includes(query)) {
+          expandPath(path);
+          const el = [...document.querySelectorAll(".name")].find(e => e.textContent === obj.name);
+          if (el) el.classList.add("highlight");
+        }
+        if (obj.children) {
+          obj.children.forEach(child => search(child, [...path, obj.name]));
+        }
+      }
+      search(treeData);
+    }
+
+    function expandPath(path) {
+      path.forEach(name => {
+        const el = [...document.querySelectorAll(".name")].find(e => e.textContent === name);
+        if (el) el.closest("li").classList.remove("hidden");
+      });
+    }
+
+    fetchTree();
+  </script>
+</body>
+</html>
