@@ -6,37 +6,10 @@
   <title>Найман шежіресі</title>
   <style>
     body { font-family: sans-serif; background: #fff; margin: 1em; }
-    ul {
-      list-style: none;
-      margin: 0;
-      padding-left: 2em;
-      position: relative;
-    }
-    ul::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0.6em;
-      width: 0;
-      height: 100%;
-      border-left: 1px solid #ccc;
-    }
-    .node {
-      position: relative;
-      padding-left: 1em;
-      margin: .5em 0;
-    }
-    .node::before {
-      content: "";
-      position: absolute;
-      top: 1.2em;
-      left: 0;
-      width: 1em;
-      height: 1px;
-      background: #ccc;
-    }
-    .actions { display: none; margin-left: 0.5em; }
-    .admin-mode .actions { display: inline; }
+    ul { list-style: none; padding-left: 1em; border-left: 1px solid #ccc; }
+    .node { margin: .3em 0; position: relative; padding-left: .5em; }
+    .node .actions { display: none; margin-left: 0.5em; }
+    .node.admin .actions { display: inline; }
     .highlight { background: beige; }
     .toggle { cursor: pointer; color: #888; margin-right: 5px; }
     .hidden { display: none; }
@@ -97,6 +70,7 @@
     function createNode(person, level = 0) {
       const li = document.createElement("li");
       li.className = "node";
+      if (admin) li.classList.add("admin");
 
       const span = document.createElement("span");
       span.innerHTML = `
@@ -119,10 +93,11 @@
           ul.appendChild(createNode(child, level + 1));
         });
 
+        // Показывать только Наймана и его детей, всё остальное скрыто
         if (level < 2) {
-          li.appendChild(ul); // Показать 1-е и 2-е поколение
+          li.appendChild(ul);
         } else {
-          ul.classList.add("hidden"); // Скрыть 3-е и глубже
+          ul.classList.add("hidden");
           li.appendChild(ul);
         }
       }
@@ -145,7 +120,6 @@
       const input = document.getElementById("adminPassword").value.trim();
       if (input === "Kaada2428") {
         admin = true;
-        document.body.classList.add("admin-mode");
         document.getElementById("logoutBtn").style.display = "inline";
         document.getElementById("adminPassword").value = "";
         renderTree();
@@ -156,7 +130,6 @@
 
     function exitAdmin() {
       admin = false;
-      document.body.classList.remove("admin-mode");
       document.getElementById("logoutBtn").style.display = "none";
       renderTree();
     }
