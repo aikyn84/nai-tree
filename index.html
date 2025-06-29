@@ -12,7 +12,7 @@
     .node.admin .actions { display: inline; }
     .highlight { background: beige; }
     .toggle { cursor: pointer; color: #888; margin-right: 5px; }
-    .hidden > ul { display: none; }
+    .hidden { display: none; }
     .admin-bar { margin: 1em 0; }
     .admin-exit { margin-left: 1em; color: red; cursor: pointer; }
     button.icon-btn { background: none; border: none; cursor: pointer; font-size: 1em; }
@@ -35,7 +35,7 @@
   <script>
     const BIN_ID = "686178068a456b7966b8207b";
     const MASTER_KEY = "$2a$10$UnP5uExbEyacFf503YChRejaBo8Jwg93.9kDLbat4.fxNad6g2wc2";
-    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    const API_URL = https://api.jsonbin.io/v3/b/${BIN_ID};
     let treeData = {};
     let admin = false;
 
@@ -63,49 +63,51 @@
       const container = document.getElementById("treeContainer");
       container.innerHTML = "";
       const ul = document.createElement("ul");
-      ul.appendChild(createNode(treeData, 0)); // уровень 0
+      ul.appendChild(createNode(treeData, 0));
       container.appendChild(ul);
     }
 
     function createNode(person, level = 0) {
-  const li = document.createElement("li");
-  li.className = "node";
-  if (admin) li.classList.add("admin");
+      const li = document.createElement("li");
+      li.className = "node";
+      if (admin) li.classList.add("admin");
 
-  const span = document.createElement("span");
-  span.innerHTML = `
-    <span class="toggle" onclick="toggleBranch(this)">+</span>
-    <span class="name" onclick="highlight(this)">${person.name}</span>`;
+      const span = document.createElement("span");
+      span.innerHTML = `
+        ${person.children && person.children.length > 0 ? '<span class="toggle" onclick="toggleBranch(this)">[+]</span>' : ''}
+        <span class="name" onclick="highlight(this)">${person.name}</span>`;
 
-  const actions = document.createElement("span");
-  actions.className = "actions";
-  actions.innerHTML = `
-    <button class="icon-btn" onclick="addChild('${person.name}')">➕</button>
-    <button class="icon-btn" onclick="editNode('${person.name}')">✏️</button>
-    <button class="icon-btn" onclick="deleteNode('${person.name}')">🗑️</button>
-  `;
-  span.appendChild(actions);
-  li.appendChild(span);
+      const actions = document.createElement("span");
+      actions.className = "actions";
+      actions.innerHTML = `
+        <button class="icon-btn" onclick="addChild('${person.name}')">➕</button>
+        <button class="icon-btn" onclick="editNode('${person.name}')">✏️</button>
+        <button class="icon-btn" onclick="deleteNode('${person.name}')">🗑️</button>
+      `;
+      span.appendChild(actions);
+      li.appendChild(span);
 
-  if (person.children && person.children.length > 0) {
-    const ul = document.createElement("ul");
-    person.children.forEach(child => {
-      ul.appendChild(createNode(child, level + 1));
-    });
+      if (person.children && person.children.length > 0) {
+        const ul = document.createElement("ul");
+        person.children.forEach(child => {
+          ul.appendChild(createNode(child, level + 1));
+        });
 
-    if (level >= 2) {
-  const hiddenWrapper = document.createElement("ul");
-  person.children?.forEach(child => {
-    hiddenWrapper.appendChild(createNode(child, level + 1));
-  });
-  li.appendChild(hiddenWrapper);
-  li.classList.add("hidden");
-  return li;
-}
+        if (level < 2) {
+          li.appendChild(ul); // Показать только Найман и его детей
+        } else {
+          ul.classList.add("hidden");
+          li.appendChild(ul); // Скрыть все, начиная с 3-го поколения
+        }
+      }
+
+      return li;
+    }
 
     function toggleBranch(el) {
       const li = el.closest("li");
-      li.classList.toggle("hidden");
+      const ul = li.querySelector("ul");
+      if (ul) ul.classList.toggle("hidden");
     }
 
     function highlight(el) {
@@ -196,7 +198,11 @@
     function expandPath(path) {
       path.forEach(name => {
         const el = [...document.querySelectorAll(".name")].find(e => e.textContent === name);
-        if (el) el.closest("li").classList.remove("hidden");
+        if (el) {
+          const li = el.closest("li");
+          const ul = li.querySelector("ul");
+          if (ul) ul.classList.remove("hidden");
+        }
       });
     }
 
