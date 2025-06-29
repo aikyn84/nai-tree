@@ -14,9 +14,8 @@
     .toggle { cursor: pointer; color: #888; margin-right: 5px; }
     .hidden > ul { display: none; }
     .admin-bar { margin: 1em 0; }
-    .search-path { font-size: 0.9em; color: #888; }
-    button.icon-btn { background: none; border: none; cursor: pointer; font-size: 1em; }
     .admin-exit { margin-left: 1em; color: red; cursor: pointer; }
+    button.icon-btn { background: none; border: none; cursor: pointer; font-size: 1em; }
   </style>
 </head>
 <body>
@@ -64,7 +63,7 @@
       const container = document.getElementById("treeContainer");
       container.innerHTML = "";
       const ul = document.createElement("ul");
-      ul.appendChild(createNode(treeData, 0)); // уровень передаём
+      ul.appendChild(createNode(treeData, 0)); // уровень 0
       container.appendChild(ul);
     }
 
@@ -72,12 +71,12 @@
       const li = document.createElement("li");
       li.className = "node";
       if (admin) li.classList.add("admin");
-
-      // скрываем все уровни глубже 1
       if (level >= 2) li.classList.add("hidden");
 
       const span = document.createElement("span");
-      span.innerHTML = <span class="toggle" onclick="toggleBranch(this)">+</span><span class="name" onclick="highlight(this)">${person.name}</span>;
+      span.innerHTML = `
+        <span class="toggle" onclick="toggleBranch(this)">+</span>
+        <span class="name" onclick="highlight(this)">${person.name}</span>`;
 
       const actions = document.createElement("span");
       actions.className = "actions";
@@ -92,7 +91,7 @@
       if (person.children && person.children.length > 0) {
         const ul = document.createElement("ul");
         person.children.forEach(child => {
-          ul.appendChild(createNode(child, level + 1)); // передаём уровень
+          ul.appendChild(createNode(child, level + 1));
         });
         li.appendChild(ul);
       }
@@ -111,11 +110,14 @@
     }
 
     function checkPassword() {
-      const input = document.getElementById("adminPassword").value;
+      const input = document.getElementById("adminPassword").value.trim();
       if (input === "Kaada2428") {
         admin = true;
         document.getElementById("logoutBtn").style.display = "inline";
+        document.getElementById("adminPassword").value = "";
         renderTree();
+      } else {
+        alert("Құпия сөз қате!");
       }
     }
 
