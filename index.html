@@ -93,16 +93,13 @@
       ul.appendChild(createNode(child, level + 1));
     });
 
-    if (level < 2) {
-      li.appendChild(ul); // показываем только 0 и 1 уровень
-    } else {
-      const wrapper = document.createElement("ul");
-      wrapper.appendChild(ul);
-      li.appendChild(wrapper);
-      li.classList.add("hidden"); // скрываем всё 2+ уровней
-    }
-  }
-
+    if (level >= 2) {
+  const hiddenWrapper = document.createElement("ul");
+  person.children?.forEach(child => {
+    hiddenWrapper.appendChild(createNode(child, level + 1));
+  });
+  li.appendChild(hiddenWrapper);
+  li.classList.add("hidden");
   return li;
 }
 
