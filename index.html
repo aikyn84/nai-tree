@@ -68,36 +68,43 @@
     }
 
     function createNode(person, level = 0) {
-      const li = document.createElement("li");
-      li.className = "node";
-      if (admin) li.classList.add("admin");
-      if (level >= 2) li.classList.add("hidden");
+  const li = document.createElement("li");
+  li.className = "node";
+  if (admin) li.classList.add("admin");
 
-      const span = document.createElement("span");
-      span.innerHTML = `
-        <span class="toggle" onclick="toggleBranch(this)">+</span>
-        <span class="name" onclick="highlight(this)">${person.name}</span>`;
+  const span = document.createElement("span");
+  span.innerHTML = `
+    <span class="toggle" onclick="toggleBranch(this)">+</span>
+    <span class="name" onclick="highlight(this)">${person.name}</span>`;
 
-      const actions = document.createElement("span");
-      actions.className = "actions";
-      actions.innerHTML = `
-        <button class="icon-btn" onclick="addChild('${person.name}')">➕</button>
-        <button class="icon-btn" onclick="editNode('${person.name}')">✏️</button>
-        <button class="icon-btn" onclick="deleteNode('${person.name}')">🗑️</button>
-      `;
-      span.appendChild(actions);
-      li.appendChild(span);
+  const actions = document.createElement("span");
+  actions.className = "actions";
+  actions.innerHTML = `
+    <button class="icon-btn" onclick="addChild('${person.name}')">➕</button>
+    <button class="icon-btn" onclick="editNode('${person.name}')">✏️</button>
+    <button class="icon-btn" onclick="deleteNode('${person.name}')">🗑️</button>
+  `;
+  span.appendChild(actions);
+  li.appendChild(span);
 
-      if (person.children && person.children.length > 0) {
-        const ul = document.createElement("ul");
-        person.children.forEach(child => {
-          ul.appendChild(createNode(child, level + 1));
-        });
-        li.appendChild(ul);
-      }
+  if (person.children && person.children.length > 0) {
+    const ul = document.createElement("ul");
+    person.children.forEach(child => {
+      ul.appendChild(createNode(child, level + 1));
+    });
 
-      return li;
+    if (level < 2) {
+      li.appendChild(ul); // показываем только 0 и 1 уровень
+    } else {
+      const wrapper = document.createElement("ul");
+      wrapper.appendChild(ul);
+      li.appendChild(wrapper);
+      li.classList.add("hidden"); // скрываем всё 2+ уровней
     }
+  }
+
+  return li;
+}
 
     function toggleBranch(el) {
       const li = el.closest("li");
