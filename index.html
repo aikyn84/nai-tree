@@ -60,12 +60,37 @@
       });
     }
 
+    function getOpenPaths() {
+      const openNames = [];
+      document.querySelectorAll("ul:not(.hidden)").forEach(ul => {
+        const li = ul.parentElement;
+        const nameEl = li.querySelector(".name");
+        if (nameEl) openNames.push(nameEl.dataset.name);
+      });
+      return openNames;
+    }
+
+    function restoreOpenPaths(names) {
+      names.forEach(name => {
+        const el = [...document.querySelectorAll(".name")].find(e => e.dataset.name === name);
+        if (el) {
+          const li = el.closest("li");
+          const ul = li.querySelector("ul");
+          const toggle = li.querySelector(".toggle");
+          if (ul) ul.classList.remove("hidden");
+          if (toggle) toggle.textContent = "[-]";
+        }
+      });
+    }
+
     function renderTree() {
+      const openPaths = getOpenPaths();
       const container = document.getElementById("treeContainer");
       container.innerHTML = "";
       const ul = document.createElement("ul");
       ul.appendChild(createNode(treeData, 0));
       container.appendChild(ul);
+      restoreOpenPaths(openPaths);
     }
 
     function createNode(person, level = 0) {
@@ -76,7 +101,7 @@
       const span = document.createElement("span");
       span.innerHTML = `
         ${person.children && person.children.length > 0 ? '<span class="toggle" onclick="toggleBranch(this)">[+]</span>' : ''}
-        <span class="name" onclick="highlight(this)">${person.name}</span>`;
+        <span class="name" data-name="${person.name}" onclick="highlight(this)">${person.name}</span>`;
 
       const actions = document.createElement("span");
       actions.className = "actions";
@@ -191,7 +216,7 @@
       function search(obj, path = []) {
         if (obj.name.toLowerCase().includes(query)) {
           expandPath(path);
-          const el = [...document.querySelectorAll(".name")].find(e => e.textContent === obj.name);
+          const el = [...document.querySelectorAll(".name")].find(e => e.dataset.name === obj.name);
           if (el) el.classList.add("highlight");
         }
         if (obj.children) {
@@ -203,16 +228,9 @@
 
     function expandPath(path) {
       path.forEach(name => {
-        const el = [...document.querySelectorAll(".name")].find(e => e.textContent === name);
+        const el = [...document.querySelectorAll(".name")].find(e => e.dataset.name === name);
         if (el) {
           const li = el.closest("li");
           const ul = li.querySelector("ul");
-          if (ul) ul.classList.remove("hidden");
-        }
-      });
-    }
-
-    fetchTree();
-  </script>
-</body>
-</html>
+          const toggle = li.querySelector(".toggle");
+          if
