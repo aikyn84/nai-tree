@@ -118,13 +118,8 @@
         person.children.forEach(child => {
           ul.appendChild(createNode(child, level + 1));
         });
-
-        if (level < 2) {
-          li.appendChild(ul);
-        } else {
-          ul.classList.add("hidden");
-          li.appendChild(ul);
-        }
+        ul.classList.add(level < 2 ? "" : "hidden");
+        li.appendChild(ul);
       }
 
       return li;
@@ -186,11 +181,13 @@
     }
 
     function editNode(name) {
+      const openPaths = getOpenPaths();
       const person = findPerson(treeData, name);
       const newName = prompt("Жаңартылған есім:", person.name);
       if (newName) {
         person.name = newName;
         renderTree();
+        restoreOpenPaths(openPaths);
         saveTree();
       }
     }
@@ -213,6 +210,7 @@
       const query = document.getElementById("searchInput").value.toLowerCase();
       document.querySelectorAll(".highlight").forEach(e => e.classList.remove("highlight"));
       if (!query) return;
+
       function search(obj, path = []) {
         if (obj.name.toLowerCase().includes(query)) {
           expandPath(path);
@@ -223,14 +221,24 @@
           obj.children.forEach(child => search(child, [...path, obj.name]));
         }
       }
+
+      function expandPath(path) {
+        path.forEach(name => {
+          const el = [...document.querySelectorAll(".name")].find(e => e.dataset.name === name);
+          if (el) {
+            const li = el.closest("li");
+            const ul = li.querySelector("ul");
+            const toggle = li.querySelector(".toggle");
+            if (ul) ul.classList.remove("hidden");
+            if (toggle) toggle.textContent = "[-]";
+          }
+        });
+      }
+
       search(treeData);
     }
 
-    function expandPath(path) {
-      path.forEach(name => {
-        const el = [...document.querySelectorAll(".name")].find(e => e.dataset.name === name);
-        if (el) {
-          const li = el.closest("li");
-          const ul = li.querySelector("ul");
-          const toggle = li.querySelector(".toggle");
-          if
+    fetchTree();
+  </script>
+</body>
+</html>
