@@ -29,6 +29,7 @@
   </div>
 
   <input type="text" id="searchInput" placeholder="Шежіреден іздеу" oninput="searchTree()" />
+
   <div id="treeContainer"></div>
 
   <script>
@@ -59,37 +60,12 @@
       });
     }
 
-    function getOpenPaths() {
-      const openNames = [];
-      document.querySelectorAll("ul:not(.hidden)").forEach(ul => {
-        const li = ul.parentElement;
-        const nameEl = li.querySelector(".name");
-        if (nameEl) openNames.push(nameEl.dataset.name);
-      });
-      return openNames;
-    }
-
-    function restoreOpenPaths(names) {
-      names.forEach(name => {
-        const el = [...document.querySelectorAll(".name")].find(e => e.dataset.name === name);
-        if (el) {
-          const li = el.closest("li");
-          const ul = li.querySelector("ul");
-          const toggle = li.querySelector(".toggle");
-          if (ul) ul.classList.remove("hidden");
-          if (toggle) toggle.textContent = "[-]";
-        }
-      });
-    }
-
     function renderTree() {
-      const openPaths = getOpenPaths();
       const container = document.getElementById("treeContainer");
       container.innerHTML = "";
       const ul = document.createElement("ul");
       ul.appendChild(createNode(treeData, 0));
       container.appendChild(ul);
-      restoreOpenPaths(openPaths);
     }
 
     function createNode(person, level = 0) {
@@ -100,7 +76,7 @@
       const span = document.createElement("span");
       span.innerHTML = `
         ${person.children && person.children.length > 0 ? '<span class="toggle" onclick="toggleBranch(this)">[+]</span>' : ''}
-        <span class="name" data-name="${person.name}" onclick="highlight(this)">${person.name}</span>`;
+        <span class="name" onclick="highlight(this)">${person.name}</span>`;
 
       const actions = document.createElement("span");
       actions.className = "actions";
@@ -185,20 +161,16 @@
     }
 
     function editNode(name) {
-      const openPaths = getOpenPaths();
       const person = findPerson(treeData, name);
       const newName = prompt("Жаңартылған есім:", person.name);
       if (newName) {
         person.name = newName;
-        const updatedPaths = openPaths.map(n => n === name ? newName : n);
         renderTree();
-        restoreOpenPaths(updatedPaths);
         saveTree();
       }
     }
 
     function deleteNode(name) {
-      const openPaths = getOpenPaths();
       function recursiveDelete(obj, name) {
         if (!obj.children) return false;
         obj.children = obj.children.filter(child => {
@@ -209,7 +181,6 @@
       }
       recursiveDelete(treeData, name);
       renderTree();
-      restoreOpenPaths(openPaths);
       saveTree();
     }
 
@@ -220,7 +191,7 @@
       function search(obj, path = []) {
         if (obj.name.toLowerCase().includes(query)) {
           expandPath(path);
-          const el = [...document.querySelectorAll(".name")].find(e => e.dataset.name === obj.name);
+          const el = [...document.querySelectorAll(".name")].find(e => e.textContent === obj.name);
           if (el) el.classList.add("highlight");
         }
         if (obj.children) {
@@ -232,18 +203,16 @@
 
     function expandPath(path) {
       path.forEach(name => {
-        const el = [...document.querySelectorAll(".name")].find(e => e.dataset.name === name);
+        const el = [...document.querySelectorAll(".name")].find(e => e.textContent === name);
         if (el) {
           const li = el.closest("li");
           const ul = li.querySelector("ul");
-          const toggle = li.querySelector(".toggle");
           if (ul) ul.classList.remove("hidden");
-          if (toggle) toggle.textContent = "[-]";
         }
       });
     }
 
-    window.onload = fetchTree;
+    fetchTree();
   </script>
 </body>
 </html>
