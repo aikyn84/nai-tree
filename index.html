@@ -60,201 +60,207 @@
   <div id="treeContainer"></div>
 
   <script>
-  const BIN_ID = "686178068a456b7966b8207b";
-  const MASTER_KEY = "$2a$10$UnP5uExbEyacFf503YChRejaBo8Jwg93.9kDLbat4.fxNad6g2wc2";
-  const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-  let treeData = {};
-  let admin = false;
-  let expandedNodes = new Set(JSON.parse(localStorage.getItem("expandedNodes")) || []);
+    const BIN_ID = "686178068a456b7966b8207b";
+    const MASTER_KEY = "$2a$10$UnP5uExbEyacFf503YChRejaBo8Jwg93.9kDLbat4.fxNad6g2wc2";
+    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    let treeData = {};
+    let admin = false;
+    let expandedNodes = new Set();
+    let initialExpand = true;
 
-  async function fetchTree() {
-    const res = await fetch(API_URL, {
-      headers: { "X-Master-Key": MASTER_KEY }
-    });
-    const json = await res.json();
-    treeData = json.record;
-    renderTree();
-  }
-
-  async function saveTree() {
-    await fetch(API_URL, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Master-Key": MASTER_KEY
-      },
-      body: JSON.stringify(treeData)
-    });
-  }
-
-  function renderTree() {
-    const container = document.getElementById("treeContainer");
-    container.innerHTML = "";
-    const ul = document.createElement("ul");
-    ul.appendChild(createNode(treeData, 0));
-    container.appendChild(ul);
-    saveExpandedNodes(); // сақталған күйді жаңарту
-  }
-
-  function createNode(person, level = 0) {
-    const li = document.createElement("li");
-    li.className = "node";
-
-    const span = document.createElement("span");
-    span.innerHTML = `
-      ${person.children && person.children.length > 0 ? '<span class="toggle" onclick="toggleBranch(this)">[+]</span>' : ''}
-      <span class="name" onclick="highlight(this)">${person.name}</span>`;
-
-    const actions = document.createElement("span");
-    actions.className = "actions";
-    actions.innerHTML = `
-      <button class="icon-btn" onclick="addChild('${person.name}')">➕</button>
-      <button class="icon-btn" onclick="editNode('${person.name}')">✏️</button>
-      <button class="icon-btn" onclick="deleteNode('${person.name}')">🗑️</button>
-    `;
-    span.appendChild(actions);
-    li.appendChild(span);
-
-    if (person.children && person.children.length > 0) {
-      const ul = document.createElement("ul");
-
-      person.children.forEach(child => {
-        ul.appendChild(createNode(child, level + 1));
+    async function fetchTree() {
+      const res = await fetch(API_URL, {
+        headers: { "X-Master-Key": MASTER_KEY }
       });
-
-      if (level < 2 || expandedNodes.has(person.name)) {
-        // 1–2 буын немесе бұрын ашылғандар көрінеді
-        ul.classList.remove("hidden");
-      } else {
-        ul.classList.add("hidden");
-      }
-
-      li.appendChild(ul);
-    }
-
-    return li;
-  }
-
-  function toggleBranch(el) {
-    const li = el.closest("li");
-    const ul = li.querySelector("ul");
-    const name = li.querySelector(".name").textContent;
-    if (ul) {
-      ul.classList.toggle("hidden");
-      if (!ul.classList.contains("hidden")) {
-        expandedNodes.add(name);
-      } else {
-        expandedNodes.delete(name);
-      }
-      saveExpandedNodes();
-    }
-  }
-
-  function saveExpandedNodes() {
-    localStorage.setItem("expandedNodes", JSON.stringify(Array.from(expandedNodes)));
-  }
-
-  function highlight(el) {
-    document.querySelectorAll(".highlight").forEach(e => e.classList.remove("highlight"));
-    el.classList.add("highlight");
-  }
-
-  function checkPassword() {
-    const input = document.getElementById("adminPassword").value.trim();
-    if (input === "Kaada2428") {
-      admin = true;
-      document.body.classList.add("admin-mode");
-      document.getElementById("logoutBtn").style.display = "inline";
-      document.getElementById("adminPassword").value = "";
+      const json = await res.json();
+      treeData = json.record;
       renderTree();
-    } else {
-      alert("Құпия сөз қате!");
     }
-  }
 
-  function exitAdmin() {
-    admin = false;
-    document.body.classList.remove("admin-mode");
-    document.getElementById("logoutBtn").style.display = "none";
-    renderTree();
-  }
+    async function saveTree() {
+      await fetch(API_URL, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": MASTER_KEY
+        },
+        body: JSON.stringify(treeData)
+      });
+    }
 
-  function findPerson(obj, name) {
-    if (obj.name === name) return obj;
-    if (obj.children) {
-      for (let child of obj.children) {
-        const res = findPerson(child, name);
-        if (res) return res;
+    function renderTree() {
+      const container = document.getElementById("treeContainer");
+      container.innerHTML = "";
+
+      // только при первом отображении в режиме просмотра
+      if (initialExpand && !admin) {
+        expandedNodes.clear();
+        expandedNodes.add("Найман");
+        if (treeData.children) {
+          treeData.children.forEach(child => expandedNodes.add(child.name));
+        }
+        initialExpand = false;
+      }
+
+      const ul = document.createElement("ul");
+      ul.appendChild(createNode(treeData));
+      container.appendChild(ul);
+    }
+
+    function createNode(person) {
+      const li = document.createElement("li");
+      li.className = "node";
+
+      const span = document.createElement("span");
+      span.innerHTML = `
+        ${person.children && person.children.length > 0 ? '<span class="toggle" onclick="toggleBranch(this)">[+]</span>' : ''}
+        <span class="name" onclick="highlight(this)">${person.name}</span>`;
+
+      const actions = document.createElement("span");
+      actions.className = "actions";
+      actions.innerHTML = `
+        <button class="icon-btn" onclick="addChild('${person.name}')">➕</button>
+        <button class="icon-btn" onclick="editNode('${person.name}')">✏️</button>
+        <button class="icon-btn" onclick="deleteNode('${person.name}')">🗑️</button>
+      `;
+      span.appendChild(actions);
+      li.appendChild(span);
+
+      if (person.children && person.children.length > 0) {
+        const ul = document.createElement("ul");
+
+        person.children.forEach(child => {
+          ul.appendChild(createNode(child));
+        });
+
+        if (expandedNodes.has(person.name)) {
+          ul.classList.remove("hidden");
+        } else {
+          ul.classList.add("hidden");
+        }
+
+        li.appendChild(ul);
+      }
+
+      return li;
+    }
+
+    function toggleBranch(el) {
+      const li = el.closest("li");
+      const ul = li.querySelector("ul");
+      const name = li.querySelector(".name").textContent;
+      if (ul) {
+        ul.classList.toggle("hidden");
+        if (!ul.classList.contains("hidden")) {
+          expandedNodes.add(name);
+        } else {
+          expandedNodes.delete(name);
+        }
       }
     }
-    return null;
-  }
 
-  function addChild(parentName) {
-    const name = prompt("Жаңа есім:");
-    if (!name) return;
-    const parent = findPerson(treeData, parentName);
-    if (!parent.children) parent.children = [];
-    parent.children.push({ name });
-    renderTree();
-    saveTree();
-  }
+    function highlight(el) {
+      document.querySelectorAll(".highlight").forEach(e => e.classList.remove("highlight"));
+      el.classList.add("highlight");
+    }
 
-  function editNode(name) {
-    const person = findPerson(treeData, name);
-    const newName = prompt("Жаңартылған есім:", person.name);
-    if (newName) {
-      person.name = newName;
+    function checkPassword() {
+      const input = document.getElementById("adminPassword").value.trim();
+      if (input === "Kaada2428") {
+        admin = true;
+        document.body.classList.add("admin-mode");
+        document.getElementById("logoutBtn").style.display = "inline";
+        document.getElementById("adminPassword").value = "";
+        renderTree();
+      } else {
+        alert("Құпия сөз қате!");
+      }
+    }
+
+    function exitAdmin() {
+      admin = false;
+      document.body.classList.remove("admin-mode");
+      document.getElementById("logoutBtn").style.display = "none";
+      initialExpand = true;
+      renderTree();
+    }
+
+    function findPerson(obj, name) {
+      if (obj.name === name) return obj;
+      if (obj.children) {
+        for (let child of obj.children) {
+          const res = findPerson(child, name);
+          if (res) return res;
+        }
+      }
+      return null;
+    }
+
+    function addChild(parentName) {
+      const name = prompt("Жаңа есім:");
+      if (!name) return;
+      const parent = findPerson(treeData, parentName);
+      if (!parent.children) parent.children = [];
+      parent.children.push({ name });
+      expandedNodes.add(parent.name);
       renderTree();
       saveTree();
     }
-  }
 
-  function deleteNode(name) {
-    function recursiveDelete(obj, name) {
-      if (!obj.children) return false;
-      obj.children = obj.children.filter(child => {
-        if (child.name === name) return false;
-        return !recursiveDelete(child, name);
+    function editNode(name) {
+      const person = findPerson(treeData, name);
+      const newName = prompt("Жаңартылған есім:", person.name);
+      if (newName) {
+        person.name = newName;
+        renderTree();
+        saveTree();
+      }
+    }
+
+    function deleteNode(name) {
+      function recursiveDelete(obj, name) {
+        if (!obj.children) return false;
+        obj.children = obj.children.filter(child => {
+          if (child.name === name) return false;
+          return !recursiveDelete(child, name);
+        });
+        return false;
+      }
+      recursiveDelete(treeData, name);
+      renderTree();
+      saveTree();
+    }
+
+    function searchTree() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      document.querySelectorAll(".highlight").forEach(e => e.classList.remove("highlight"));
+      if (!query) return;
+      function search(obj, path = []) {
+        if (obj.name.toLowerCase().includes(query)) {
+          expandPath(path);
+          const el = [...document.querySelectorAll(".name")].find(e => e.textContent === obj.name);
+          if (el) el.classList.add("highlight");
+        }
+        if (obj.children) {
+          obj.children.forEach(child => search(child, [...path, obj.name]));
+        }
+      }
+      search(treeData);
+    }
+
+    function expandPath(path) {
+      path.forEach(name => {
+        const el = [...document.querySelectorAll(".name")].find(e => e.textContent === name);
+        if (el) {
+          const li = el.closest("li");
+          const ul = li.querySelector("ul");
+          if (ul) ul.classList.remove("hidden");
+          expandedNodes.add(name);
+        }
       });
-      return false;
     }
-    recursiveDelete(treeData, name);
-    renderTree();
-    saveTree();
-  }
 
-  function searchTree() {
-    const query = document.getElementById("searchInput").value.toLowerCase();
-    document.querySelectorAll(".highlight").forEach(e => e.classList.remove("highlight"));
-    if (!query) return;
-    function search(obj, path = []) {
-      if (obj.name.toLowerCase().includes(query)) {
-        expandPath(path);
-        const el = [...document.querySelectorAll(".name")].find(e => e.textContent === obj.name);
-        if (el) el.classList.add("highlight");
-      }
-      if (obj.children) {
-        obj.children.forEach(child => search(child, [...path, obj.name]));
-      }
-    }
-    search(treeData);
-  }
-
-  function expandPath(path) {
-    path.forEach(name => {
-      const el = [...document.querySelectorAll(".name")].find(e => e.textContent === name);
-      if (el) {
-        const li = el.closest("li");
-        const ul = li.querySelector("ul");
-        if (ul) ul.classList.remove("hidden");
-        expandedNodes.add(name);
-      }
-    });
-    saveExpandedNodes();
-  }
-
-  fetchTree();
-</script>
+    fetchTree();
+  </script>
 </body>
 </html>
